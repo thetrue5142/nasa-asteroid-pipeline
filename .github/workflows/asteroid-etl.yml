@@ -1,0 +1,39 @@
+
+name: NASA Asteroid ETL
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 1 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nasa-asteroid-etl
+  cancel-in-progress: false
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Extract and transform NASA data
+        run: python asteroid_transform.py
+
+      - name: Load data into PostgreSQL
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python asteroid_load.py
